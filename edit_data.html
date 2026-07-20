@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vedra BI Sheet</title>
+    
+    <script>
+        // Global Error Prevention & Recovery Engine
+        window.addEventListener('error', function(event) {
+            handleGlobalError(event.error || { message: event.message }, event.filename, event.lineno, event.colno);
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            handleGlobalError(event.reason || new Error(event.reason), null, null, null);
+        });
+
+        function handleGlobalError(error, source, lineno, colno) {
+            console.error('[Global Error Caught]:', error, source, lineno, colno);
+            
+            // Only show if the overlay doesn't already exist to prevent duplicate triggers
+            if (document.getElementById('global-error-overlay')) return;
+            
+            const errorMessage = error ? (error.message || String(error)) : 'Unknown Error';
+            const errorStack = error ? (error.stack || '') : '';
+            const locationInfo = source ? `File: ${source}:${lineno}:${colno}` : 'In-line or Async Execution';
+            
+            const isDark = document.documentElement.classList.contains('dark-theme') || localStorage.getItem('theme') === 'dark';
+            
+            const overlay = document.createElement('div');
+            overlay.id = 'global-error-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: ${isDark ? '#0d1117' : '#f8fafc'};
+                color: ${isDark ? '#c9d1d9' : '#0f172a'};
+                z-index: 99999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                padding: 20px;
+                overflow-y: auto;
+                box-sizing: border-box;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="
+                    max-width: 600px;
+                    width: 100%;
+                    background: ${isDark ? '#161b22' : '#ffffff'};
+                    border: 1px solid ${isDark ? '#30363d' : '#e2e8f0'};
+                    border-radius: 12px;
+                    padding: 32px;
+                    box-shadow: 0 10px 25px rgba(0,0,0, ${isDark ? '0.5' : '0.05'});
+                    text-align: center;
+                ">
+                    <!-- Icon -->
+                    <div style="font-size: 48px; color: #ef4444; margin-bottom: 16px;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    
+                    <!-- Hindi Message -->
+                    <h3 style="font-weight: 700; margin-bottom: 8px; color: ${isDark ? '#f0f6fc' : '#1e293b'};">
+                        कुछ गलत हो गया!
+                    </h3>
+                    <p style="font-size: 14px; color: ${isDark ? '#8b949e' : '#64748b'}; margin-bottom: 24px;">
+                        एप्लिकेशन में एक अप्रत्याशित समस्या आई है। हम आपके अनुभव को सुरक्षित रखने के लिए इसे पुनः प्राप्त करने में आपकी सहायता कर रहे हैं।
+                    </p>
+                    
+                    <!-- English Message -->
+                    <h4 style="font-weight: 600; font-size: 18px; margin-bottom: 6px; color: ${isDark ? '#ffd07a' : '#8b5cf6'};">
+                        Something went wrong!
+                    </h4>
+                    <p style="font-size: 14px; color: ${isDark ? '#8b949e' : '#64748b'}; margin-bottom: 24px;">
+                        An unexpected error occurred. To protect your work and session, you can use the options below to recover.
+                    </p>
+                    
+                    <!-- Recovery Actions -->
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                        <button onclick="window.location.reload()" style="
+                            padding: 12px 20px;
+                            background: #2563eb;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: background 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <i class="bi bi-arrow-clockwise"></i> फिर से लोड करें (Reload Page)
+                        </button>
+                        
+                        <button onclick="if(confirm('क्या आप निश्चित रूप से कैश और सेटिंग्स रीसेट करना चाहते हैं? इससे आपकी बिना सहेजी हुई सेटिंग्स साफ़ हो सकती हैं।')) { localStorage.clear(); sessionStorage.clear(); window.location.reload(); }" style="
+                            padding: 12px 20px;
+                            background: ${isDark ? '#21262d' : '#f1f5f9'};
+                            color: ${isDark ? '#c9d1d9' : '#334155'};
+                            border: 1px solid ${isDark ? '#30363d' : '#cbd5e1'};
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <i class="bi bi-trash"></i> कैश और सेटिंग्स रीसेट करें (Reset & Clear Cache)
+                        </button>
+
+                        <button onclick="window.location.href = 'index.html'" style="
+                            padding: 12px 20px;
+                            background: ${isDark ? '#30363d' : '#e2e8f0'};
+                            color: ${isDark ? '#f0f6fc' : '#1e293b'};
+                            border: none;
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <i class="bi bi-house-door"></i> मुख्य डैशबोर्ड पर जाएं (Go to Dashboard)
+                        </button>
+                    </div>
+                    
+                    <!-- Diagnostic Info Details accordion -->
+                    <details style="text-align: left; background: ${isDark ? '#0d1117' : '#f1f5f9'}; border: 1px solid ${isDark ? '#30363d' : '#cbd5e1'}; border-radius: 6px; padding: 12px;">
+                        <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: ${isDark ? '#58a6ff' : '#2563eb'}; outline: none; user-select: none;">
+                            <i class="bi bi-bug"></i> तकनीकी विवरण दिखाएं (Show Technical Error Details)
+                        </summary>
+                        <div style="margin-top: 12px; font-size: 12px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; color: ${isDark ? '#c9d1d9' : '#334155'};">
+<strong>Error:</strong> \${errorMessage}
+<strong>Location:</strong> \${locationInfo}
+\${errorStack ? \`\\n<strong>Stack Trace:</strong>\\n\${errorStack}\` : ''}
+                        </div>
+                    </details>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+        }
+
+        // Early CDN Fallback engine
+        window.handleCdnError = function(element, fallbackUrl) {
+            console.error('[CDN Fallback Engine] Failed to load resource:', element.src || element.href);
+            if (element.dataset.fallbackTried === 'true') return;
+            
+            if (element.tagName === 'SCRIPT') {
+                const script = document.createElement('script');
+                script.src = fallbackUrl;
+                script.dataset.fallbackTried = 'true';
+                script.onload = () => console.log('[CDN Fallback Engine] Loaded fallback:', fallbackUrl);
+                script.onerror = () => handleGlobalError(new Error('Failed to load critical script ' + fallbackUrl));
+                document.head.appendChild(script);
+            } else if (element.tagName === 'LINK') {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = fallbackUrl;
+                link.dataset.fallbackTried = 'true';
+                link.onload = () => console.log('[CDN Fallback Engine] Loaded fallback stylesheet:', fallbackUrl);
+                document.head.appendChild(link);
+            }
+        };
+    </script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" onerror="handleCdnError(this, 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css')">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" onerror="handleCdnError(this, 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css')">
+    
+    
+    
+    <!-- Luckysheet CSS from Forked Repo -->
+    <link rel='stylesheet' href='https://dhaval-vedra.github.io/Luckysheet/dist/plugins/css/pluginsCss.css' />
+    <link rel='stylesheet' href='https://dhaval-vedra.github.io/Luckysheet/dist/plugins/plugins.css' />
+    <link rel='stylesheet' href='https://dhaval-vedra.github.io/Luckysheet/dist/css/luckysheet.css' />
+    <link rel='stylesheet' href='https://dhaval-vedra.github.io/Luckysheet/dist/assets/iconfont/iconfont.css' />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji" !important;
+            background-color: #0d1117;
+        }
+        #luckysheet-container {
+            width: 100%;
+            height: calc(100vh - 54px);
+            position: fixed;
+            top: 54px;
+            left: 0;
+            background-color: #ffffff;
+        }
+        #control-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #24292f !important; /* GitHub dark header background */
+            height: 54px !important;
+            border-bottom: 1px solid #1b1f24 !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px !important;
+            z-index: 999;
+            box-shadow: 0 1px 0 rgba(27,31,35,0.04) !important;
+        }
+        #custom-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #custom-title {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #ffffff !important;
+            letter-spacing: 0px !important;
+        }
+        #control-panel-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            padding: 5px 16px !important;
+            height: 32px !important;
+            line-height: 20px !important;
+            border-radius: 6px !important;
+            border: 1px solid rgba(27,31,36,0.15) !important;
+            transition: all 0.1s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            cursor: pointer !important;
+            text-decoration: none !important;
+        }
+        .btn i {
+            font-size: 0.95rem;
+        }
+        .btn-primary {
+            background-color: #2da44e !important;
+            border-color: rgba(27,31,36,0.15) !important;
+            color: #ffffff !important;
+        }
+        .btn-primary:hover {
+            background-color: #2c974b !important;
+        }
+        .btn-secondary {
+            background-color: #21262d !important; /* Matches GitHub header button style */
+            color: #c9d1d9 !important;
+            border-color: rgba(240,246,252,0.1) !important;
+        }
+        .btn-secondary:hover {
+            background-color: #30363d !important;
+            border-color: #8b949e !important;
+            color: #ffffff !important;
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            color: #c9d1d9;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
+        }
+
+        /* Luckysheet logo hiding */
+        #luckysheet-info-logo {
+            display: none !important;
+        }
+
+        /* ==========================================================================
+           MODERN SPINNER & EXTENDED LIGHT/DARK THEME UX ENHANCEMENTS
+           ========================================================================== */
+        
+        /* Smooth transitions for elements */
+        #control-panel, .btn, #loading-overlay, #luckysheet-container {
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Beautiful Modern Spinner for loading overlay */
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            animation: fadeIn 0.5s ease-out;
+            text-align: center;
+        }
+        .custom-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(139, 92, 246, 0.1);
+            border-left-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* LIGHT THEME ADJUSTMENTS */
+        body.silk-light-theme {
+            background-color: #f6f8fa !important;
+        }
+        body.silk-light-theme #control-panel {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #d0d7de !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        }
+        body.silk-light-theme #custom-title {
+            color: #24292f !important;
+        }
+        body.silk-light-theme .btn-secondary {
+            background-color: #f6f8fa !important;
+            color: #24292f !important;
+            border-color: rgba(27,31,36,0.15) !important;
+        }
+        body.silk-light-theme .btn-secondary:hover {
+            background-color: #f3f4f6 !important;
+            border-color: rgba(27,31,36,0.15) !important;
+            color: #24292f !important;
+        }
+        body.silk-light-theme #loading-overlay {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: #24292f !important;
+        }
+        body.silk-light-theme .custom-spinner {
+            border-color: rgba(139, 92, 246, 0.15);
+            border-left-color: #8b5cf6;
+        }
+
+        /* Draft Recovery Banner styling */
+        #draft-recovery-banner {
+            position: fixed;
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 720px;
+            background: #1f2937;
+            border: 1px solid #eab308;
+            border-radius: 8px;
+            padding: 14px 20px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+            z-index: 1050;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        body.silk-light-theme #draft-recovery-banner {
+            background: #fef9c3;
+            border-color: #eab308;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+        }
+        .draft-message {
+            font-size: 13px;
+            color: #f3f4f6;
+            font-weight: 500;
+        }
+        body.silk-light-theme .draft-message {
+            color: #713f12;
+        }
+        .draft-buttons {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate(-50%, -15px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* Mobile Warning Banner */
+        #mobile-warning-banner {
+            display: none;
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            border-bottom: 1px solid #fde68a;
+            z-index: 1000;
+            position: fixed;
+            top: 54px;
+            left: 0;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        body.dark-theme #mobile-warning-banner {
+            background-color: #2b1d12;
+            color: #fef3c7;
+            border-color: #44321a;
+        }
+        @media (max-width: 768px) {
+            #mobile-warning-banner {
+                display: block;
+            }
+            #luckysheet-container {
+                top: 94px !important;
+                height: calc(100vh - 94px) !important;
+            }
+        }
+
+        /* Modal custom scrollbar and UI tuning */
+        body.silk-light-theme #helpModal .modal-content,
+        body.silk-light-theme #profileModal .modal-content {
+            background: #ffffff !important;
+            color: #24292f !important;
+            border-color: #e1e4e8 !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+        }
+        body.silk-light-theme #helpModal .modal-header,
+        body.silk-light-theme #profileModal .modal-header {
+            border-bottom: 1px solid #e1e4e8 !important;
+        }
+        body.silk-light-theme #helpModal .modal-footer,
+        body.silk-light-theme #profileModal .modal-footer {
+            border-top: 1px solid #e1e4e8 !important;
+        }
+        body.silk-light-theme #helpModal .modal-title,
+        body.silk-light-theme #profileModal .modal-title {
+            color: #8b5cf6 !important;
+        }
+        body.silk-light-theme #profileModal .modal-body input,
+        body.silk-light-theme #profileModal .modal-body select {
+            background: #f6f8fa !important;
+            color: #24292f !important;
+            border-color: #d0d7de !important;
+        }
+        body.silk-light-theme #profileModal .card[style*="background: rgba(255, 255, 255, 0.02)"] {
+            border-color: #d0d7de !important;
+            background: #f6f8fa !important;
+        }
+        body.silk-light-theme #profileModal div[style*="background: rgba(0,0,0,0.15)"] {
+            background: #eaeef2 !important;
+            border-color: #d0d7de !important;
+        }
+        body.silk-light-theme #profileModal .text-muted {
+            color: #57606a !important;
+        }
+    </style>
+    <script>
+        window.addEventListener('error', function(e) {
+            const errMsg = e.message || '';
+            const errSrc = e.filename || '';
+            const lowerMsg = (errMsg + ' ' + errSrc).toLowerCase();
+            if (
+                lowerMsg.includes('websocket') ||
+                lowerMsg.includes('vite') ||
+                lowerMsg.includes('hmr') ||
+                lowerMsg.includes('hot-update')
+            ) {
+                console.warn('[Benign HMR/WebSocket Error Ignored]:', errMsg);
+                return;
+            }
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.backgroundColor = '#2d1a1c';
+                overlay.style.color = '#f8d7da';
+                overlay.innerHTML = '<div style="padding: 24px; text-align: center; max-width: 500px; border: 1px solid #dc3545; background: #1d1213; border-radius: 8px;">' +
+                    '<h4 style="color: #ea868f;">⚠️ Runtime Error:</h4>' +
+                    '<p style="font-family: monospace; font-size: 13px; margin-top: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; text-align: left; word-break: break-all;">' + e.message + '</p>' +
+                    '<p style="font-size: 12px; margin-top: 10px; color: #adb5bd;">Filename: ' + (e.filename || 'unknown') + ' | Line: ' + (e.lineno || 'N/A') + '</p>' +
+                    '<button class="btn btn-secondary mt-3" onclick="window.location.href=\'index.html\'" style="padding: 5px 15px !important; font-size:12px !important; height:auto !important;"><i class="bi bi-arrow-left"></i> Go Back</button>' +
+                    '</div>';
+                overlay.style.display = 'flex';
+            }
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            const reason = e.reason || {};
+            const errMsg = reason.message || String(reason) || '';
+            const errStack = reason.stack || '';
+            const lowerMsg = (errMsg + ' ' + errStack).toLowerCase();
+            if (
+                lowerMsg.includes('websocket') ||
+                lowerMsg.includes('vite') ||
+                lowerMsg.includes('hmr') ||
+                lowerMsg.includes('hot-update')
+            ) {
+                console.warn('[Benign HMR/WebSocket Error Ignored]:', errMsg);
+                return;
+            }
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.backgroundColor = '#2d1a1c';
+                overlay.style.color = '#f8d7da';
+                overlay.innerHTML = '<div style="padding: 24px; text-align: center; max-width: 500px; border: 1px solid #dc3545; background: #1d1213; border-radius: 8px;">' +
+                    '<h4 style="color: #ea868f;">⚠️ Promise Rejection:</h4>' +
+                    '<p style="font-family: monospace; font-size: 13px; margin-top: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; text-align: left; word-break: break-all;">' + (e.reason ? e.reason.message || e.reason : 'Unknown Promise Rejection') + '</p>' +
+                    '<button class="btn btn-secondary mt-3" onclick="window.location.href=\'index.html\'" style="padding: 5px 15px !important; font-size:12px !important; height:auto !important;"><i class="bi bi-arrow-left"></i> Go Back</button>' +
+                    '</div>';
+                overlay.style.display = 'flex';
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- Mobile Warning Banner -->
+    <div id="mobile-warning-banner">
+        <i class="bi bi-exclamation-triangle-fill"></i> <strong>मोबाइल स्क्रीन अलर्ट:</strong> सर्वोत्तम संपादन अनुभव और बड़ी शीट फाइलों के लिए कृपया लैंडस्केप मोड या डेस्कटॉप स्क्रीन का उपयोग करें।
+    </div>
+
+    <!-- Draft Recovery Banner -->
+    <div id="draft-recovery-banner">
+        <div class="draft-message">
+            <i class="bi bi-clock-history"></i> <strong>अनसाव्ड ड्राफ्ट मिला:</strong> आपके पास पिछले संपादन सत्र की कुछ सहेजी न गई जानकारी है।
+        </div>
+        <div class="draft-buttons">
+            <button id="restoreDraftBtn" class="btn btn-primary" style="background-color: #8b5cf6 !important; border-color: #8b5cf6 !important; font-size:12px !important; height:28px !important; padding:2px 12px !important;"><i class="bi bi-arrow-counterclockwise"></i> पुनर्स्थापित करें</button>
+            <button id="discardDraftBtn" class="btn btn-secondary" style="font-size:12px !important; height:28px !important; padding:2px 12px !important;"><i class="bi bi-trash"></i> ड्राफ्ट हटाएं</button>
+        </div>
+    </div>
+
+    <div id="loading-overlay">
+        <div class="spinner-container">
+            <div class="custom-spinner"></div>
+            <h5 style="font-weight: 600; margin: 0; font-size: 16px;">Vedra BI शीट एडिटर लोड हो रहा है...</h5>
+            <p style="font-size: 13px; color: #8b949e; margin: 0;">कृपया प्रतीक्षा करें, आपका सुरक्षित क्लाउड डेटाबेस सिंक किया जा रहा है</p>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div id="custom-header">
+            <span id="custom-title">📊 Vedra BI — डेटा एडिटर</span>
+        </div>
+        <div id="control-panel-buttons">
+            <button id="saveDataBtn" class="btn btn-primary"><i class="bi bi-save"></i> डेटा सेव करें</button>
+            <button id="themeToggleBtn" class="btn btn-secondary" title="थीम बदलें (Toggle Theme)"><i class="bi bi-sun-fill"></i> थीम</button>
+            <button id="helpBtn" class="btn btn-secondary" title="मदद / गाइड" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i> गाइड</button>
+            <button id="profileBtn" class="btn btn-secondary" title="यूज़र प्रोफ़ाइल (User Profile)" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="bi bi-person-badge-fill"></i> प्रोफ़ाइल</button>
+            <button id="backBtn" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> डैशबोर्ड</button>
+        </div>
+    </div>
+
+    <div id="luckysheet-container"></div>
+
+    <!-- Guided Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 12px;">
+                <div class="modal-header" style="border-bottom: 1px solid #30363d;">
+                    <h5 class="modal-title" id="helpModalLabel" style="color: #ffd07a; font-weight: 700;"><i class="bi bi-compass-fill"></i> संपादन निर्देशिका (Editing Guide)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="background-color: transparent !important;"></button>
+                </div>
+                <div class="modal-body" style="font-size: 14px; line-height: 1.6; padding: 24px;">
+                    <div class="mb-3">
+                        <strong style="color: #ffffff;"><i class="bi bi-pencil-square"></i> 1. सेल एडिट करें (Edit Cells)</strong>
+                        <p style="color: #8b949e; font-size: 13px; margin-top: 4px; margin-left: 18px;">किसी भी सेल पर डबल-क्लिक करें या उसे सिलेक्ट करके लिखना शुरू करें।</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong style="color: #ffffff;"><i class="bi bi-layout-three-columns"></i> 2. रो/कॉलम जोड़ें (Rows & Columns)</strong>
+                        <p style="color: #8b949e; font-size: 13px; margin-top: 4px; margin-left: 18px;">रो या कॉलम हेडर पर राइट-क्लिक करके आप नई पंक्ति या कॉलम जोड़/हटा सकते हैं।</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong style="color: #ffffff;"><i class="bi bi-calculator"></i> 3. फॉर्मूला का उपयोग (Formulas)</strong>
+                        <p style="color: #8b949e; font-size: 13px; margin-top: 4px; margin-left: 18px;">जैसे standard Excel/Google Sheets, आप `=SUM(A1:A5)` या `=AVERAGE(B1:B10)` जैसे फॉर्मूले लिख सकते हैं।</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong style="color: #ffffff;"><i class="bi bi-cloud-arrow-up"></i> 4. सुरक्षित रूप से सहेजें (Save Changes)</strong>
+                        <p style="color: #8b949e; font-size: 13px; margin-top: 4px; margin-left: 18px;">परिवर्तनों को स्थायी रूप से क्लाउड पर सहेजने के लिए ऊपर दिए गए <strong>"डेटा सेव करें"</strong> बटन पर क्लिक करें।</p>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #30363d; padding: 16px 24px;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">समझ गया (Got It)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" id="profileModalContent" style="background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 12px;">
+                <div class="modal-header" style="border-bottom: 1px solid #30363d;">
+                    <h5 class="modal-title" id="profileModalLabel" style="color: #8b5cf6; font-weight: 700;"><i class="bi bi-person-badge-fill"></i> मुख्य प्रोफ़ाइल (Main Profile)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="background-color: transparent !important;"></button>
+                </div>
+                <div class="modal-body" style="font-size: 14px; line-height: 1.6; padding: 24px;">
+                    <!-- Profile Header Card (Gradient Blue) -->
+                    <div class="card border-0 mb-3 overflow-hidden shadow" style="border-radius: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+                        <div class="card-body text-white text-center py-4 position-relative">
+                            <div class="position-absolute" style="top: -50px; right: -50px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.08); pointer-events: none;"></div>
+                            
+                            <div class="position-relative d-inline-block mb-3">
+                                <div id="modalUserAvatar" class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-lg" style="width: 76px; height: 76px; font-size: 32px; margin: 0 auto; border: 3px solid rgba(255, 255, 255, 0.45);">
+                                    U
+                                </div>
+                                <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-2 shadow" style="border-width: 2.5px !important;" title="Active Session"></span>
+                            </div>
+                            <h5 id="modalProfileDisplayName" class="mb-1 fw-bold" style="font-size: 1.25rem;">Demo User</h5>
+                            <p id="modalProfileUserEmail" class="text-white-50 small mb-3" style="font-size: 0.82rem; word-break: break-all; opacity: 0.85;">guest@vedrabi.com</p>
+                            <span id="modalProfileUserBadge" class="badge bg-white text-primary fw-bold px-3 py-1.5 shadow-sm" style="border-radius: 20px; font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-star-fill text-warning me-1"></i> प्रो विश्लेषक (Pro Analyst)</span>
+                        </div>
+                    </div>
+
+                    <!-- Editable User Info Form -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-slate-400"><i class="bi bi-person-fill text-primary"></i> आपका नाम (Your Name)</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" id="modalDisplayNameInput" class="form-control" style="background: rgba(255,255,255,0.05); color: inherit; border-color: #30363d; border-radius: 8px; font-size: 14px;" placeholder="अपना नाम दर्ज करें...">
+                            <button id="modalSaveNameBtn" class="btn btn-primary d-flex align-items-center justify-content-center" style="height: 38px; width: 38px; border-radius: 8px; background-color: #8b5cf6 !important; border-color: #8b5cf6 !important;"><i class="bi bi-check-lg fs-5"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-slate-400"><i class="bi bi-chat-quote-fill text-primary"></i> आपका बायो (Your Bio)</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" id="modalBioInput" class="form-control" style="background: rgba(255,255,255,0.05); color: inherit; border-color: #30363d; border-radius: 8px; font-size: 14px;" placeholder="अपना बायो दर्ज करें...">
+                            <button id="modalSaveBioBtn" class="btn btn-primary d-flex align-items-center justify-content-center" style="height: 38px; width: 38px; border-radius: 8px; background-color: #8b5cf6 !important; border-color: #8b5cf6 !important;"><i class="bi bi-check-lg fs-5"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Plan Selection -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-slate-400"><i class="bi bi-gem text-primary"></i> सदस्यता प्लान (Subscription Plan)</label>
+                        <select id="modalPlanSelect" class="form-select" style="background: rgba(255,255,255,0.05); color: inherit; border-color: #30363d; border-radius: 8px; font-size: 14px; cursor: pointer;">
+                            <option value="Basic" style="background: #161b22; color: #c9d1d9;">बेसिक यूजर (Basic User)</option>
+                            <option value="Pro" style="background: #161b22; color: #c9d1d9;" selected>प्रो विश्लेषक (Pro Analyst)</option>
+                            <option value="Enterprise" style="background: #161b22; color: #c9d1d9;">एंटरप्राइज प्रो (Enterprise)</option>
+                        </select>
+                    </div>
+
+                    <!-- Usage Statistics Dashboard Card -->
+                    <div class="card border-0 mb-1 shadow-sm" style="border-radius: 12px; border: 1px solid #30363d; background: rgba(255, 255, 255, 0.02);">
+                        <div class="card-body p-3">
+                            <h6 class="card-title fw-bold mb-3 small" style="color: #ffd07a;"><i class="bi bi-activity text-primary"></i> वास्तविक समय के आँकड़े (Real-time Stats)</h6>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="p-2 rounded text-center" style="border: 1px solid #30363d; background: rgba(0,0,0,0.15);">
+                                        <div id="modalStatTotalRows" class="fs-5 fw-bold text-success">-</div>
+                                        <div class="text-muted small" style="font-size: 0.72rem;">डेटा पंक्तियाँ</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 rounded text-center" style="border: 1px solid #30363d; background: rgba(0,0,0,0.15);">
+                                        <div id="modalStatTotalCols" class="fs-5 fw-bold text-primary">-</div>
+                                        <div class="text-muted small" style="font-size: 0.72rem;">स्तंभ (Columns)</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 rounded text-center" style="border: 1px solid #30363d; background: rgba(0,0,0,0.15);">
+                                        <div id="modalStatTheme" class="fs-5 fw-bold text-info">-</div>
+                                        <div class="text-muted small" style="font-size: 0.72rem;">सक्रिय थीम</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 rounded text-center" style="border: 1px solid #30363d; background: rgba(0,0,0,0.15);">
+                                        <div id="modalStatSync" class="fs-5 fw-bold text-warning" style="font-size: 0.9rem !important;">सुरक्षित क्लाउड</div>
+                                        <div class="text-muted small" style="font-size: 0.72rem;">सिंक प्रदाता</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #30363d; padding: 16px 24px;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">बंद करें (Close)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- Luckysheet JS from Forked Repo -->
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/plugins/js/plugin.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/luckysheet.umd.js"></script>
+    
+    <!-- Demo Data -->
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/demoFeature.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetFormula.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetCell.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetConditionFormat.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetTable.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetComment.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetPivotTableData.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetPivotTable.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetSparkline.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetChart.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetPicture.js"></script>
+    <script src="https://dhaval-vedra.github.io/Luckysheet/dist/demoData/sheetDataVerification.js"></script>
+
+
+    <script type="module">
+        import { auth, db, showMessage } from './src/js/utils.js';
+
+        // Safe alert fallback to avoid sandbox iframe SecurityError crashes
+        function safeAlert(msg, type = 'info') {
+            try {
+                showMessage(msg, type);
+            } catch (e) {
+                console.warn("showMessage failed, falling back to basic alert: ", e);
+                try {
+                    alert(msg);
+                } catch (err) {
+                    console.error("Native alert also failed or was blocked by iframe sandbox: ", err);
+                }
+            }
+        }
+
+        // --- Theme Engine ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+        }
+
+        function applyTheme(theme) {
+            const htmlEl = document.documentElement;
+            const bodyEl = document.body;
+            const toggleIcon = document.querySelector('#themeToggleBtn i');
+            
+            if (theme === 'dark') {
+                htmlEl.classList.add('dark-theme');
+                bodyEl.classList.add('dark-theme');
+                htmlEl.classList.remove('silk-light-theme');
+                bodyEl.classList.remove('silk-light-theme');
+                if (toggleIcon) {
+                    toggleIcon.className = 'bi bi-sun-fill';
+                }
+            } else {
+                htmlEl.classList.add('silk-light-theme');
+                bodyEl.classList.add('silk-light-theme');
+                htmlEl.classList.remove('dark-theme');
+                bodyEl.classList.remove('dark-theme');
+                if (toggleIcon) {
+                    toggleIcon.className = 'bi bi-moon-fill';
+                }
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', currentTheme);
+            applyTheme(currentTheme);
+        }
+
+        // --- Extraction Utility ---
+        function extractSheetData() {
+            if (typeof luckysheet === 'undefined') return null;
+            const sheets = luckysheet.getAllSheets();
+            if (!sheets || sheets.length === 0 || !sheets[0].data) return null;
+            const luckySheetData = sheets[0].data;
+
+            if (!luckySheetData || luckySheetData.length === 0) {
+                 return null;
+            }
+
+            // Map headers with their actual column indexes to prevent any alignment shifting
+            const headerColMap = [];
+            const headers = [];
+            const headerRow = luckySheetData[0];
+            
+            if (headerRow) {
+                headerRow.forEach((cell, cIndex) => {
+                    if (cell) {
+                        const val = (cell.v !== undefined && cell.v !== null) ? cell.v : cell.m;
+                        if (val !== undefined && val !== null && String(val).trim() !== '') {
+                            const headerName = String(val).trim();
+                            headers.push(headerName);
+                            headerColMap.push({ name: headerName, colIndex: cIndex });
+                        }
+                    }
+                });
+            }
+
+            if (headers.length === 0) {
+                 return null;
+            }
+            
+            const dataToSave = [];
+            for(let r = 1; r < luckySheetData.length; r++) {
+                const row = luckySheetData[r];
+                if(row) {
+                    const rowObject = {};
+                    let hasAnyValue = false;
+                    
+                    headerColMap.forEach(hMap => {
+                        const cell = row[hMap.colIndex];
+                        if (cell) {
+                            const val = cell.v !== undefined ? cell.v : cell.m;
+                            if (val !== undefined && val !== null && String(val).trim() !== '') {
+                                rowObject[hMap.name] = val;
+                                hasAnyValue = true;
+                            }
+                        }
+                    });
+                    
+                    if (hasAnyValue) {
+                        dataToSave.push(rowObject);
+                    }
+                }
+            }
+            return { data: dataToSave, headers: headers };
+        }
+
+        // --- Draft & Auto-save Engine ---
+        function saveDraftToLocalStorage() {
+            const sheetData = extractSheetData();
+            if (sheetData && sheetData.data.length > 0) {
+                localStorage.setItem('vedra_sheet_draft', JSON.stringify({
+                    sheetData: sheetData,
+                    timestamp: Date.now()
+                }));
+                console.log("Draft autosaved to localStorage.");
+            }
+        }
+
+        function checkAndShowDraftRecovery() {
+            const draftStr = localStorage.getItem('vedra_sheet_draft');
+            if (draftStr) {
+                try {
+                    const draft = JSON.parse(draftStr);
+                    // Check if the draft is less than 24 hours old to keep it relevant
+                    if (Date.now() - draft.timestamp < 24 * 60 * 60 * 1000) {
+                        const banner = document.getElementById('draft-recovery-banner');
+                        if (banner) banner.style.display = 'flex';
+                    }
+                } catch (e) {
+                    console.error("Failed to parse draft details:", e);
+                }
+            }
+        }
+
+        function restoreDraft() {
+            const draftStr = localStorage.getItem('vedra_sheet_draft');
+            if (!draftStr) return;
+            try {
+                const draft = JSON.parse(draftStr);
+                const sheetData = draft.sheetData;
+                
+                renderSheetWithData(sheetData.headers, sheetData.data);
+                
+                document.getElementById('draft-recovery-banner').style.display = 'none';
+                safeAlert('अनसाव्ड ड्राफ्ट को सफलतापूर्वक पुनर्स्थापित किया गया!', 'success');
+            } catch (e) {
+                console.error("Failed to restore draft:", e);
+                safeAlert('ड्राफ्ट पुनर्स्थापित करने में त्रुटि हुई।', 'danger');
+            }
+        }
+
+        // --- Render Luckysheet Engine ---
+        function renderSheetWithData(headers, rawDataObjects) {
+            let luckyData = [{ celldata: [], name: 'Sheet1', row: 100, column: 20 }];
+            
+            if (headers.length > 0) {
+                const celldata = [];
+                // Headers को celldata में बदलें (With proper Cell Object wrapper)
+                headers.forEach((header, cIndex) => {
+                    celldata.push({ r: 0, c: cIndex, v: { v: header, m: String(header), ct: { fa: "General", t: "g" } } });
+                });
+                
+                // Data rows को celldata में बदलें (With proper Cell Object wrapper)
+                if (rawDataObjects && rawDataObjects.length > 0) {
+                    rawDataObjects.forEach((rowObject, rIndex) => {
+                        headers.forEach((header, cIndex) => {
+                            const value = rowObject[header];
+                            if (value !== null && value !== undefined) {
+                                celldata.push({ 
+                                    r: rIndex + 1, 
+                                    c: cIndex, 
+                                    v: { 
+                                        v: value, 
+                                        m: String(value), 
+                                        ct: typeof value === 'number' ? { fa: "General", t: "n" } : { fa: "General", t: "g" } 
+                                    } 
+                                });
+                            }
+                        });
+                    });
+                }
+                
+                luckyData = [{
+                    celldata: celldata,
+                    name: 'Sheet1',
+                    row: Math.max((rawDataObjects ? rawDataObjects.length : 0) + 500, 100),
+                    column: Math.max(headers.length + 100, 26),
+                }];
+            }
+
+            luckysheet.create({
+                container: 'luckysheet-container',
+                data: luckyData,
+                lang: 'en',
+                
+                // === UI Settings ===
+                showtoolbar: true,
+                showinfobar: true,
+                showsheetbar: true,
+                showstatisticBar: true,
+                title: 'Vedra bi',
+                
+                // === Sheet Settings ===
+                allowEdit: true,
+                allowUpdate: true,
+                showRowHeader: true,
+                showColumnHeader: true,
+                sheetFormulaBar: true,
+                sheetFilter: true,
+                sheetChart: true,
+                
+                // === Extra Features Enable ===
+                enableAddRow: true, 
+                enableAddCol: true, 
+                allowCopy: true, 
+                pivotTable: true, 
+                imageInsert: true, 
+                allowComments: true, 
+                hyperlink: true, 
+                dataValidation: true, 
+                allowMultipleSheets: true, 
+                cellAutoFill: true, 
+                allowContextMenu: true, 
+                allowSheetRename: true, 
+                allowSheetDelete: true, 
+                
+                // Chart & Filter Options
+                sheetFilterOptions: { showFilter: true },
+                sheetChartOptions: { showChart: true }
+            });
+        }
+
+        async function loadDataForLuckysheet() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const user = auth.currentUser;
+
+            if (!user) {
+                safeAlert("डेटा एडिट करने के लिए कृपया लॉगिन करें।", "warning");
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+                return;
+            }
+
+            loadingOverlay.style.display = 'flex';
+            try {
+                if (typeof luckysheet === 'undefined') {
+                    throw new Error("Luckysheet library failed to load from CDN. Please check your network connection or try refreshing.");
+                }
+
+                const doc = await db.collection('users').doc(user.uid).get();
+                let headers = [];
+                let rawDataObjects = [];
+
+                if (doc.exists) {
+                    const userData = doc.data();
+                    rawDataObjects = userData.data || [];
+                    headers = userData.headers || [];
+                }
+
+                renderSheetWithData(headers, rawDataObjects);
+                console.log("Luckysheet created successfully.");
+                
+                // Check if a backup draft is available
+                checkAndShowDraftRecovery();
+
+            } catch (error) {
+                console.error("Error loading data for Luckysheet:", error);
+                loadingOverlay.style.backgroundColor = '#2d1a1c';
+                loadingOverlay.style.color = '#f8d7da';
+                loadingOverlay.innerHTML = `
+                    <div style="padding: 24px; text-align: center; max-width: 500px; border: 1px solid #dc3545; background: #1d1213; border-radius: 8px;">
+                        <h4 style="color: #ea868f;">⚠️ डेटा लोड करने में त्रुटि (Error Loading Data)</h4>
+                        <p style="font-family: monospace; font-size: 13px; margin-top: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; text-align: left; word-break: break-all;">${error.message}</p>
+                        <button class="btn btn-secondary mt-3" id="errorBackBtn" style="padding: 5px 15px !important; font-size:12px !important; height:auto !important;"><i class="bi bi-arrow-left"></i> वापस जाएं (Go Back)</button>
+                    </div>
+                `;
+                document.getElementById('errorBackBtn')?.addEventListener('click', () => {
+                    window.location.href = 'index.html';
+                });
+            } finally {
+                // If no error message is shown, hide loading screen
+                if (!loadingOverlay.innerHTML.includes('⚠️')) {
+                    loadingOverlay.style.display = 'none';
+                }
+            }
+        }
+
+        async function saveDataFromLuckysheet() {
+            const user = auth.currentUser;
+            if (!user) {
+                safeAlert("डेटा सेव करने के लिए कृपया लॉगिन करें।", "warning");
+                return;
+            }
+
+            const sheetData = extractSheetData();
+            if (!sheetData) {
+                safeAlert("सेव करने के लिए कोई वैध डेटा या हेडर नहीं है।", "warning");
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveDataBtn');
+            const originalHTML = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> सेव हो रहा है...';
+
+            try {
+                await db.collection('users').doc(user.uid).set({
+                    data: sheetData.data,
+                    headers: sheetData.headers,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                // Clear draft on successful database save
+                localStorage.removeItem('vedra_sheet_draft');
+                safeAlert('डेटा सफलतापूर्वक सेव किया गया!', 'success');
+                console.log("Luckysheet data saved to Firebase successfully!");
+            } catch (error) {
+                console.error("Error saving data:", error);
+                safeAlert('डेटा सेव करने में त्रुटि हुई।', 'danger');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalHTML;
+            }
+        }
+
+        // --- Profile Modal Sync Engine ---
+        function initProfileModal() {
+            const profileModalEl = document.getElementById('profileModal');
+            if (!profileModalEl) return;
+
+            // When modal is about to be shown, populate user info
+            profileModalEl.addEventListener('show.bs.modal', () => {
+                const user = auth.currentUser;
+                let email = "guest@vedrabi.com";
+                let name = "Pro Analyst";
+                let bio = "डेटा ही सुंदर भविष्य की कुंजी है! 📊";
+                let plan = "Pro";
+
+                if (user) {
+                    email = user.email || email;
+                    name = user.displayName || localStorage.getItem('profileDisplayName') || email.split('@')[0];
+                } else {
+                    const savedEmail = localStorage.getItem('profileEmail');
+                    if (savedEmail) email = savedEmail;
+                    const savedName = localStorage.getItem('profileDisplayName');
+                    if (savedName) name = savedName;
+                }
+
+                bio = localStorage.getItem('profileBio') || "Vedra BI डेशबोर्ड विश्लेषक।";
+                plan = localStorage.getItem('userSubscriptionPlan') || "Pro";
+
+                // Update Header Card elements
+                document.getElementById('modalProfileDisplayName').textContent = name;
+                document.getElementById('modalProfileUserEmail').textContent = email;
+                document.getElementById('modalUserAvatar').textContent = name.charAt(0).toUpperCase();
+
+                const badge = document.getElementById('modalProfileUserBadge');
+                if (plan === 'Basic') {
+                    badge.className = "badge bg-white text-secondary fw-bold px-3 py-1.5 shadow-sm";
+                    badge.innerHTML = '<i class="bi bi-person text-secondary me-1"></i> बेसिक यूजर (Basic User)';
+                } else if (plan === 'Pro') {
+                    badge.className = "badge bg-white text-primary fw-bold px-3 py-1.5 shadow-sm";
+                    badge.innerHTML = '<i class="bi bi-star-fill text-warning me-1"></i> प्रो विश्लेषक (Pro Analyst)';
+                } else if (plan === 'Enterprise') {
+                    badge.className = "badge bg-white text-danger fw-bold px-3 py-1.5 shadow-sm";
+                    badge.innerHTML = '<i class="bi bi-shield-fill-check text-danger me-1"></i> एंटरप्राइज प्रो (Enterprise)';
+                }
+
+                // Update Inputs
+                document.getElementById('modalDisplayNameInput').value = name;
+                document.getElementById('modalBioInput').value = bio;
+                document.getElementById('modalPlanSelect').value = plan;
+
+                // Update Stats
+                let totalRows = 0;
+                let totalCols = 0;
+                
+                if (typeof luckysheet !== 'undefined') {
+                    try {
+                        const sheets = luckysheet.getAllSheets();
+                        const sheet = sheets && sheets.length > 0 ? sheets[0] : null;
+                        if (sheet && sheet.data) {
+                            totalCols = sheet.data[0] ? sheet.data[0].length : 0;
+                            // Count rows with any actual values
+                            sheet.data.forEach((row, idx) => {
+                                if (idx > 0 && row && row.some(cell => cell && (cell.v !== undefined || cell.m !== undefined))) {
+                                    totalRows++;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.warn("Could not calculate sheet statistics:", e);
+                    }
+                }
+                
+                document.getElementById('modalStatTotalRows').textContent = totalRows;
+                document.getElementById('modalStatTotalCols').textContent = totalCols;
+                document.getElementById('modalStatTheme').textContent = (localStorage.getItem('theme') || 'light') === 'dark' ? 'डार्क (Dark)' : 'लाइट (Light)';
+            });
+
+            // Action Listeners for Profile updates
+            document.getElementById('modalSaveNameBtn').addEventListener('click', async () => {
+                const newName = document.getElementById('modalDisplayNameInput').value.trim();
+                if (!newName) {
+                    safeAlert("नाम खाली नहीं हो सकता!", "warning");
+                    return;
+                }
+
+                localStorage.setItem('profileDisplayName', newName);
+                document.getElementById('modalProfileDisplayName').textContent = newName;
+                document.getElementById('modalUserAvatar').textContent = newName.charAt(0).toUpperCase();
+
+                const user = auth.currentUser;
+                if (user) {
+                    try {
+                        await user.updateProfile({ displayName: newName });
+                        console.log("Firebase Auth display name updated successfully.");
+                    } catch (err) {
+                        console.warn("Failed to update Firebase Auth profile:", err);
+                    }
+                }
+
+                safeAlert("नाम सफलतापूर्वक अपडेट किया गया!", "success");
+            });
+
+            document.getElementById('modalSaveBioBtn').addEventListener('click', () => {
+                const bioVal = document.getElementById('modalBioInput').value.trim();
+                localStorage.setItem('profileBio', bioVal);
+                safeAlert("बायो सफलतापूर्वक सहेजा गया!", "success");
+            });
+
+            document.getElementById('modalPlanSelect').addEventListener('change', (e) => {
+                const selectedPlan = e.target.value;
+                localStorage.setItem('userSubscriptionPlan', selectedPlan);
+                
+                const badge = document.getElementById('modalProfileUserBadge');
+                if (selectedPlan === 'Basic') {
+                    badge.className = "badge bg-white text-secondary fw-bold px-3 py-1.5 shadow-sm";
+                    badge.innerHTML = '<i class="bi bi-person text-secondary me-1"></i> बेसिक यूजर (Basic User)';
+                } else if (selectedPlan === 'Pro') {
+                    badge.className = "badge bg-white text-primary fw-bold px-3 py-1.5 shadow-sm";
+                    badge.innerHTML = '<i class="bi bi-star-fill text-warning me-1"></i> प्रो विश्लेषक (Pro Analyst)';
+                } else if (selectedPlan === 'Enterprise') {
+                    badge.className = "badge bg-white text-danger fw-bold px-3 py-1.5 shadow-sm";
+                    badge.innerHTML = '<i class="bi bi-shield-fill-check text-danger me-1"></i> एंटरप्राइज प्रो (Enterprise)';
+                }
+
+                safeAlert(`सफलतापूर्वक ${selectedPlan} सदस्यता में बदला गया!`, "success");
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Theme Sync
+            initTheme();
+            document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+
+            // Initialize Profile Modal engine
+            initProfileModal();
+
+            // Check Auth State
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    loadDataForLuckysheet();
+                } else {
+                    safeAlert("डेटा एडिट करने के लिए कृपया लॉगिन करें।", "warning");
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+            });
+
+            // Action Listeners
+            document.getElementById('saveDataBtn').addEventListener('click', saveDataFromLuckysheet);
+            document.getElementById('backBtn').addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+
+            // Recovery button clicks
+            document.getElementById('restoreDraftBtn').addEventListener('click', restoreDraft);
+            document.getElementById('discardDraftBtn').addEventListener('click', () => {
+                if (confirm('क्या आप निश्चित रूप से ड्राफ्ट हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।')) {
+                    localStorage.removeItem('vedra_sheet_draft');
+                    document.getElementById('draft-recovery-banner').style.display = 'none';
+                    safeAlert('सहेजा न गया ड्राफ्ट सफलतापूर्वक हटा दिया गया।', 'info');
+                }
+            });
+
+            // Periodically check and autosave every 15 seconds
+            setInterval(saveDraftToLocalStorage, 15000);
+
+            // Save immediately when navigating away
+            window.addEventListener('beforeunload', saveDraftToLocalStorage);
+        });
+    </script>
+</body>
+</html>
