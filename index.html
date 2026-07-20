@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vedra BI - Advanced Visualizations & Analytics</title>
+    
+    <script>
+        // Global Error Prevention & Recovery Engine
+        window.addEventListener('error', function(event) {
+            handleGlobalError(event.error || { message: event.message }, event.filename, event.lineno, event.colno);
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            handleGlobalError(event.reason || new Error(event.reason), null, null, null);
+        });
+
+        function handleGlobalError(error, source, lineno, colno) {
+            console.error('[Global Error Caught]:', error, source, lineno, colno);
+            
+            // Ignore benign development server / Vite websocket / HMR errors
+            const errMsg = error ? (error.message || String(error)) : '';
+            const errStack = (error && error.stack) ? error.stack : '';
+            const errSrc = source ? String(source) : '';
+            const lowerMsg = (errMsg + ' ' + errStack + ' ' + errSrc).toLowerCase();
+            
+            if (
+                lowerMsg.includes('websocket') ||
+                lowerMsg.includes('vite') ||
+                lowerMsg.includes('hmr') ||
+                lowerMsg.includes('hot-update')
+            ) {
+                console.warn('[Benign HMR/WebSocket Error Ignored]:', errMsg);
+                return;
+            }
+            
+            // Only show if the overlay doesn't already exist to prevent duplicate triggers
+            if (document.getElementById('global-error-overlay')) return;
+            
+            const errorMessage = error ? (error.message || String(error)) : 'Unknown Error';
+            const errorStack = error ? (error.stack || '') : '';
+            const locationInfo = source ? `File: ${source}:${lineno}:${colno}` : 'In-line or Async Execution';
+            
+            const isDark = document.documentElement.classList.contains('dark-theme') || localStorage.getItem('theme') === 'dark';
+            
+            const overlay = document.createElement('div');
+            overlay.id = 'global-error-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: ${isDark ? '#0d1117' : '#f8fafc'};
+                color: ${isDark ? '#c9d1d9' : '#0f172a'};
+                z-index: 99999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                padding: 20px;
+                overflow-y: auto;
+                box-sizing: border-box;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="
+                    max-width: 600px;
+                    width: 100%;
+                    background: ${isDark ? '#161b22' : '#ffffff'};
+                    border: 1px solid ${isDark ? '#30363d' : '#e2e8f0'};
+                    border-radius: 12px;
+                    padding: 32px;
+                    box-shadow: 0 10px 25px rgba(0,0,0, ${isDark ? '0.5' : '0.05'});
+                    text-align: center;
+                ">
+                    <!-- Icon -->
+                    <div style="font-size: 48px; color: #ef4444; margin-bottom: 16px;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    
+                    <!-- Hindi Message -->
+                    <h3 style="font-weight: 700; margin-bottom: 8px; color: ${isDark ? '#f0f6fc' : '#1e293b'};">
+                        कुछ गलत हो गया!
+                    </h3>
+                    <p style="font-size: 14px; color: ${isDark ? '#8b949e' : '#64748b'}; margin-bottom: 24px;">
+                        एप्लिकेशन में एक अप्रत्याशित समस्या आई है। हम आपके अनुभव को सुरक्षित रखने के लिए इसे पुनः प्राप्त करने में आपकी सहायता कर रहे हैं।
+                    </p>
+                    
+                    <!-- English Message -->
+                    <h4 style="font-weight: 600; font-size: 18px; margin-bottom: 6px; color: ${isDark ? '#ffd07a' : '#8b5cf6'};">
+                        Something went wrong!
+                    </h4>
+                    <p style="font-size: 14px; color: ${isDark ? '#8b949e' : '#64748b'}; margin-bottom: 24px;">
+                        An unexpected error occurred. To protect your work and session, you can use the options below to recover.
+                    </p>
+                    
+                    <!-- Recovery Actions -->
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                        <button onclick="window.location.reload()" style="
+                            padding: 12px 20px;
+                            background: #2563eb;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: background 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <i class="bi bi-arrow-clockwise"></i> फिर से लोड करें (Reload Page)
+                        </button>
+                        
+                        <button onclick="if(confirm('क्या आप निश्चित रूप से कैश और सेटिंग्स रीसेट करना चाहते हैं? इससे आपकी बिना सहेजी हुई सेटिंग्स साफ़ हो सकती हैं।')) { localStorage.clear(); sessionStorage.clear(); window.location.reload(); }" style="
+                            padding: 12px 20px;
+                            background: ${isDark ? '#21262d' : '#f1f5f9'};
+                            color: ${isDark ? '#c9d1d9' : '#334155'};
+                            border: 1px solid ${isDark ? '#30363d' : '#cbd5e1'};
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <i class="bi bi-trash"></i> कैश और सेटिंग्स रीसेट करें (Reset & Clear Cache)
+                        </button>
+
+                        <button onclick="window.location.href = 'index.html'" style="
+                            padding: 12px 20px;
+                            background: ${isDark ? '#30363d' : '#e2e8f0'};
+                            color: ${isDark ? '#f0f6fc' : '#1e293b'};
+                            border: none;
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <i class="bi bi-house-door"></i> मुख्य डैशबोर्ड पर जाएं (Go to Dashboard)
+                        </button>
+                    </div>
+                    
+                    <!-- Diagnostic Info Details accordion -->
+                    <details style="text-align: left; background: ${isDark ? '#0d1117' : '#f1f5f9'}; border: 1px solid ${isDark ? '#30363d' : '#cbd5e1'}; border-radius: 6px; padding: 12px;">
+                        <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: ${isDark ? '#58a6ff' : '#2563eb'}; outline: none; user-select: none;">
+                            <i class="bi bi-bug"></i> तकनीकी विवरण दिखाएं (Show Technical Error Details)
+                        </summary>
+                        <div style="margin-top: 12px; font-size: 12px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; color: ${isDark ? '#c9d1d9' : '#334155'};">
+<strong>Error:</strong> ${errorMessage}
+<strong>Location:</strong> ${locationInfo}
+${errorStack ? `\n<strong>Stack Trace:</strong>\n${errorStack}` : ''}
+                        </div>
+                    </details>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+        }
+
+        // Early CDN Fallback engine
+        window.handleCdnError = function(element, fallbackUrl) {
+            console.error('[CDN Fallback Engine] Failed to load resource:', element.src || element.href);
+            if (element.dataset.fallbackTried === 'true') return;
+            
+            if (element.tagName === 'SCRIPT') {
+                const script = document.createElement('script');
+                script.src = fallbackUrl;
+                script.dataset.fallbackTried = 'true';
+                script.onload = () => console.log('[CDN Fallback Engine] Loaded fallback:', fallbackUrl);
+                script.onerror = () => handleGlobalError(new Error('Failed to load critical script ' + fallbackUrl));
+                document.head.appendChild(script);
+            } else if (element.tagName === 'LINK') {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = fallbackUrl;
+                link.dataset.fallbackTried = 'true';
+                link.onload = () => console.log('[CDN Fallback Engine] Loaded fallback stylesheet:', fallbackUrl);
+                document.head.appendChild(link);
+            }
+        };
+    </script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" onerror="handleCdnError(this, 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css')">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" onerror="handleCdnError(this, 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css')">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/css/pluginsCss.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/plugins.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/css/luckysheet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/assets/iconfont/iconfont.css" />
+    
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.min.css">
+    <link rel="stylesheet" href="src/css/dark_theam.css" />
+    <link rel="stylesheet" href="src/css/core.css" />
+    <link rel="stylesheet" href="src/css/editor_templates.css" />
+    
+    <link rel="stylesheet" href="src/css/ai_advice.css"/>
+    <link rel="stylesheet" href="src/css/all.css"/>
+    <link rel="stylesheet" href="src/css/small_menubarall.css"/>
+    <link rel="stylesheet" href="src/css/custom.css"/>
+    <script>
+        // Apply saved theme early to prevent flash of light theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark-theme');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('dark-theme');
+                const offcanvasNav = document.getElementById('offcanvasNav');
+                if (offcanvasNav) offcanvasNav.classList.add('dark-theme');
+                const offcanvasSidebar = document.getElementById('offcanvasSidebar');
+                if (offcanvasSidebar) offcanvasSidebar.classList.add('dark-theme');
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Title Bar Hidden (As requested by user) -->
+
+    <nav class="main-menu-bar">
+        <!-- Sidebar Brand (Visible on Desktop Sidebar) -->
+        <div class="sidebar-brand d-none d-lg-flex align-items-center justify-content-center mb-4 py-2">
+            <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);">
+                <i class="bi bi-cpu fs-4"></i>
+            </div>
+        </div>
+
+        <a href="#" class="nav-link" id="menuData" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="dataContent" title="Data (डेटा लोड और सेटिंग्स)">
+            <i class="bi bi-file-earmark-arrow-up"></i>
+            <span>Data</span>
+        </a>
+        <a href="#" class="nav-link" id="menuCharts" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="chartSettingsContent" title="Chart (चार्ट डिज़ाइनर)">
+            <i class="bi bi-bar-chart"></i>
+            <span>Chart</span>
+        </a>
+        <a href="#" class="nav-link" id="menuKpiBuilder" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="kpiBuilderContent" title="KPI Builder (केपीआई)">
+            <i class="bi bi-patch-check-fill"></i>
+            <span>KPI Builder</span>
+        </a>
+        <a href="#" class="nav-link" id="menuAdvancedSettings" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="advancedSettingsContent" title="Advance Settings (एडवांस्ड सेटिंग्स)">
+            <i class="bi bi-sliders"></i>
+            <span>Advance Settings</span>
+        </a>
+        <a href="#" class="nav-link" id="menuDataStatistics" data-bs-toggle="modal" data-bs-target="#mainMenuModal" data-menu-target="dataStatisticsContent" title="डेटा सांख्यिकी (Data Stats)">
+            <i class="bi bi-calculator"></i>
+            <span>डेटा सांख्यिकी</span>
+        </a>
+        <a href="#" class="nav-link" id="menuAdditionalActions" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="additionalActionsContent" title="अतिरिक्त कार्य (Actions)">
+            <i class="bi bi-gear"></i>
+            <span>अतिरिक्त कार्य</span>
+        </a>
+        <a href="#" class="nav-link" id="menuTemplates" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="templatesContent" title="लेआउट टेम्पलेट्स (Layouts)">
+            <i class="bi bi-folder-symlink"></i>
+            <span>लेआउट टेम्पलेट्स</span>
+        </a>
+        <a href="#" class="nav-link" id="menuFilterSort" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="filterSortContent" title="फ़िल्टर एवं सॉर्ट (Filters)">
+            <i class="bi bi-filter"></i>
+            <span>फ़िल्टर एवं सॉर्ट</span>
+        </a>
+        <a href="#" class="nav-link" id="menuDashboardView" data-bs-toggle="modal" data-bs-target="#mainMenuModal" data-menu-target="dashboardViewContent" title="डैशबोर्ड व्यू (Dashboard)">
+            <i class="bi bi-eye"></i>
+            <span>डैशबोर्ड व्यू</span>
+        </a>
+        <a href="#" class="nav-link" id="menuChartFormatting" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="chartFormattingContent" title="चार्ट फॉर्मेटिंग (Formatting)">
+            <i class="bi bi-brush"></i>
+            <span>चार्ट फॉर्मेटिंग</span>
+        </a>
+        <a href="#" class="nav-link" id="menuChartEffects" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="chartEffectsContent" title="चार्ट इफ़ेक्ट (Effects)">
+            <i class="bi bi-magic"></i>
+            <span>चार्ट इफ़ेक्ट</span>
+        </a>
+        <a href="#" class="nav-link" id="menuTextbox" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="textboxContent" title="टेक्स्टबॉक्स (Textbox)">
+            <i class="bi bi-textarea-t"></i>
+            <span>टेक्स्टबॉक्स</span>
+        </a>
+        <a href="#" class="nav-link" id="menuDashboardTheme" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="dashboardThemeContent" title="डैशबोर्ड थीम (Theme)">
+            <i class="bi bi-palette"></i>
+            <span>डैशबोर्ड थीम</span>
+        </a>
+        <a href="#" class="nav-link" id="menuUserInfo" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" data-menu-target="userInfoContent" title="प्रोफ़ाइल (Profile)">
+            <i class="bi bi-person-circle"></i>
+            <span>प्रोफ़ाइल</span>
+        </a>
+        <a href="#" class="nav-link" id="toggleDashboardSectionBtn" title="डैशबोर्ड छुपाएं/दिखाएं (Toggle Dashboard)">
+            <i class="bi bi-eye-slash" id="toggleDashboardSectionIcon"></i>
+            <span id="toggleDashboardSectionText">डैशबोर्ड छुपाएं</span>
+        </a>
+    </nav>
+    
+    <nav class="small-menu-bar">
+        <div class="btn-group" role="group" aria-label="Small menu bar buttons">
+            <button id="toggleTheme" class="btn btn-secondary" title="थीम बदलें (Light/Dark)"><i class="bi bi-moon"></i></button>
+            <button id="toggleDashboardSectionSmallBtn" class="btn btn-secondary" title="डैशबोर्ड दिखाएं/छुपाएं (Toggle Dashboard)"><i class="bi bi-eye-slash"></i></button>
+            <button id="btnQuickTour" class="btn text-white" style="background-color: #8b5cf6;" title="त्वरित मार्गदर्शिका टूर (Interactive Help Tour)"><i class="bi bi-compass-fill"></i></button>
+            <button id="btnCommandPalette" class="btn btn-dark" title="कमांड पैलेट खोज (Ctrl+K)"><i class="bi bi-search"></i></button>
+            <button id="btnStartPresentation" class="btn text-white" style="background-color: #0d9488;" title="प्रेजेंटेशन और लाइव स्लाइड शो मोड (Fullscreen Showcase Mode)"><i class="bi bi-projector-fill"></i></button>
+            <button id="btnAudioNarrator" class="btn text-white" style="background-color: #f59e0b;" title="स्मार्ट ऑडियो कार्यकारी सारांश (AI Voice Briefing)"><i class="bi bi-volume-up-fill"></i></button>
+            <button id="downloadTemplate" class="btn btn-info" title="एक्सेल टेम्पलेट डाउनलोड करें"><i class="bi bi-download"></i></button>
+            <button id="editDataBtn" class="btn btn-warning" onclick="window.location.href='edit_data.html';" title="डेटा एडिट करें (Excel Grid)">
+                <i class="bi bi-pencil-square"></i>
+            </button>
+            <button id="addDataBtn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDataModal" title="नया डेटा रिकॉर्ड जोड़ें">
+                <i class="bi bi-plus-square"></i>
+            </button>
+            <div class="btn-group" role="group">
+                <button id="exportReportDropdown" class="btn btn-success dropdown-toggle text-white d-flex align-items-center justify-content-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="रिपोर्ट एक्सपोर्ट">
+                    <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="exportReportDropdown" style="z-index: 1050;">
+                    <li><a class="dropdown-item" href="#" id="exportPDFBtn"><i class="bi bi-file-pdf text-danger me-2"></i> PDF रिपोर्ट डाउनलोड करें</a></li>
+                    <li><a class="dropdown-item" href="#" id="exportPNGDashboardBtn"><i class="bi bi-image text-primary me-2"></i> पूरे डैशबोर्ड की PNG इमेज लें</a></li>
+                    <li><a class="dropdown-item" href="#" id="exportCSVFilteredBtn"><i class="bi bi-filetype-csv text-success me-2"></i> फ़िल्टर्ड डेटा एक्सपोर्ट (CSV)</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div id="loadingOverlay">
+        <!-- Sidebar Skeleton (Hidden on Mobile) -->
+        <div class="skeleton-sidebar">
+            <div class="skeleton-logo skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse" style="margin-top: 24px;"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+            <div class="skeleton-menu-item skeleton-pulse"></div>
+        </div>
+        
+        <!-- Main Content Skeleton -->
+        <div class="skeleton-main">
+            <!-- Top Header Skeleton -->
+            <div class="skeleton-header">
+                <div class="skeleton-title skeleton-pulse"></div>
+                <div class="skeleton-header-actions">
+                    <div class="skeleton-btn skeleton-pulse"></div>
+                    <div class="skeleton-btn skeleton-pulse"></div>
+                    <div class="skeleton-btn skeleton-pulse"></div>
+                </div>
+            </div>
+            
+            <!-- Controls / Filter Panel Skeleton -->
+            <div class="skeleton-filter-bar skeleton-pulse"></div>
+            
+            <!-- Bento-style Dashboard Cards Skeleton -->
+            <div class="skeleton-grid">
+                <!-- Card 1 (Simulated Bar/Column Chart Card) -->
+                <div class="skeleton-card">
+                    <div class="skeleton-card-title skeleton-pulse"></div>
+                    <div class="skeleton-chart-area">
+                        <div class="skeleton-bar skeleton-pulse" style="height: 35%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 60%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 45%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 80%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 25%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 65%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 50%;"></div>
+                    </div>
+                </div>
+                
+                <!-- Card 2 (Simulated Line Chart Card) -->
+                <div class="skeleton-card">
+                    <div class="skeleton-card-title skeleton-pulse"></div>
+                    <div class="skeleton-chart-area">
+                        <div class="skeleton-bar skeleton-pulse" style="height: 75%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 40%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 55%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 30%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 85%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 50%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 70%;"></div>
+                    </div>
+                </div>
+                
+                <!-- Card 3 (Simulated Stacked/Complex Chart Card) -->
+                <div class="skeleton-card">
+                    <div class="skeleton-card-title skeleton-pulse"></div>
+                    <div class="skeleton-chart-area">
+                        <div class="skeleton-bar skeleton-pulse" style="height: 45%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 70%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 35%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 55%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 80%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 40%;"></div>
+                        <div class="skeleton-bar skeleton-pulse" style="height: 60%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end shadow" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel" style="width: 380px;">
+        <div class="offcanvas-body p-3">
+            
+            <!-- Dynamic Sidebar Containers -->
+            <div id="chartSettingsContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="kpiBuilderContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="additionalActionsContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="filterSortContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="chartFormattingContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="chartEffectsContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="textboxContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="dashboardThemeContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="userInfoContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="advancedSettingsContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="dataContent" class="offcanvas-content" style="display: none;"></div>
+            <div id="templatesContent" class="offcanvas-content" style="display: none;"></div>
+
+            </div>
+        </div>
+        
+        <div class="container-fluid main-content-container py-4 flex-grow-1">
+            <div id="dashboardSection" class="content-section active">
+                <div id="visualizationsSection" class="section-card">
+                    <h3 id="mainVisualizationsHeader" class="mt-4"><i class="bi bi-bar-chart-line"></i> Visualizations</h3>
+                    
+                    <!-- Global Live Dashboard Filters Bar -->
+                    <div class="card p-3 mb-3 border-0 bg-light-subtle shadow-sm rounded-4">
+                        <div class="row g-3 align-items-end text-start">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-funnel-fill text-primary"></i> ग्लोबल फ़िल्टर कॉलम (Filter Column):</label>
+                                <select id="globalFilterCol" class="form-select form-select-sm">
+                                    <option value="">-- कॉलम चुनें (None) --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-check-circle-fill text-success"></i> फ़िल्टर मान (Filter Value):</label>
+                                <select id="globalFilterVal" class="form-select form-select-sm" disabled>
+                                    <option value="">-- सभी मान (All) --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-calendar-range text-info"></i> दिनांक सीमा (Global Date Range):</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="date" id="globalStartDate" class="form-control">
+                                    <span class="input-group-text bg-white border-start-0 border-end-0">से</span>
+                                    <input type="date" id="globalEndDate" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button id="globalApplyFilterBtn" class="btn btn-sm btn-primary flex-grow-1 fw-bold"><i class="bi bi-play-fill"></i> लागू करें</button>
+                                <button id="globalResetFilterBtn" class="btn btn-sm btn-outline-secondary" title="रीसेट करें"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dashboardContent" class="position-relative" style="min-height: 500px; border: 1px dashed #ccc; padding: 10px;">
+                        <div class="no-charts-message text-muted text-center p-4">
+                            <p><i class="bi bi-info-circle"></i> कोई चार्ट उपलब्ध नहीं है।</p>
+                            <p>सेटिंग्स से 'चार्ट' में जाकर चार्ट जोड़ें।</p>
+                        </div>
+                        </div>
+                </div>
+                <hr>
+                <div id="dataTableSection" class="section-card">
+                    <!-- Active Filter Chips Bar -->
+                    <div id="activeFiltersContainer" class="d-none align-items-center flex-wrap gap-2 mb-3 bg-light p-2.5 rounded border" style="border-color: #cbd5e1 !important;">
+                        <span class="text-secondary small fw-bold me-1 d-flex align-items-center gap-1" style="font-size: 0.78rem;">
+                            <i class="bi bi-funnel-fill text-primary"></i> <span>सक्रिय फ़िल्टर्स:</span>
+                        </span>
+                        <div id="activeFiltersChips" class="d-flex flex-wrap gap-1.5 align-items-center">
+                            <!-- Clickable chips will be injected here dynamically -->
+                        </div>
+                    </div>
+                   
+                    <div class="table-responsive" style="max-height:400px; overflow:auto;">
+                        <div id="dataTableContainer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="dataInsertSidebar" aria-labelledby="dataInsertSidebarLabel" style="width: 450px; z-index: 1055;"></div>
+    <div id="luckysheetSection" class="luckysheet-section" style="display: none;">
+        <div id="luckysheet-container"></div>
+        <div class="d-flex justify-content-end p-2 border-top bg-light">
+            <button id="saveLuckysheetData" class="btn btn-success me-2"><i class="bi bi-save"></i> डेटा सेव करें</button>
+            <button id="closeLuckysheet" class="btn btn-secondary"><i class="bi bi-x-circle"></i> बंद करें</button>
+        </div>
+    </div>
+
+    <div id="chatPopup" class="chat-popup">
+        <div class="chat-popup-header">
+            <span><i class="bi bi-chat-dots"></i> AI चैट असिस्टेंट</span>
+            <div class="header-controls">
+                <button id="clearChatBtn" class="btn btn-sm btn-outline-light me-1" title="चैट इतिहास साफ़ करें" style="padding: 2px 8px; font-size: 12px; border-color: rgba(255,255,255,0.4); color: white;">
+                    <i class="bi bi-trash"></i> साफ़ करें
+                </button>
+                <button id="toggleChatFullscreenBtn" class="btn btn-sm btn-outline-light me-2" title="फुल स्क्रीन करें" style="padding: 2px 8px; font-size: 12px; border-color: rgba(255,255,255,0.4); color: white;">
+                    <i class="bi bi-fullscreen" id="chatFullscreenIcon"></i>
+                </button>
+                <button id="closeChatBtn" class="close-btn" title="बंद करें">&times;</button>
+            </div>
+        </div>
+        <div class="chat-popup-body">
+            <div id="agentControlDeck" class="agent-control-deck d-none border-bottom bg-white p-2" style="position: sticky; top: -20px; z-index: 10; margin: -20px -20px 15px -20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+                    <span class="small fw-bold text-secondary" style="font-size: 11px;"><i class="bi bi-cpu text-primary me-1"></i> एजेंट कमांड सेंटर</span>
+                    <span class="badge bg-primary text-white" style="font-size: 9px; padding: 2px 6px;">PRO MODE</span>
+                </div>
+                <div class="d-flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-none" style="white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none;">
+                    <button id="agentCmdChart" class="btn btn-xs btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="चार्ट असिस्टेंट (Chart Assistant)">
+                        <i class="bi bi-graph-up-arrow" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdEffect" class="btn btn-xs btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="विज़ुअल इफ़ेक्ट्स (Style Effects)">
+                        <i class="bi bi-magic" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdTheme" class="btn btn-xs btn-outline-info text-dark rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="कार्ड थीम असिस्टेंट (Card Themes)">
+                        <i class="bi bi-paint-bucket" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdLayout" class="btn btn-xs btn-outline-warning text-dark rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="ग्रिड लेआउट असिस्टेंट (Grid Layout)">
+                        <i class="bi bi-grid-3x3-gap-fill" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdData" class="btn btn-xs btn-outline-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="मॉक डेटा जनरेटर (Mock Data Generator)">
+                        <i class="bi bi-database-fill-gear" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdLive" class="btn btn-xs btn-outline-dark rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="लाइव रिफ्रेश असिस्टेंट (Live Refresh)">
+                        <i class="bi bi-clock-history" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdTextbox" class="btn btn-xs btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="टेक्स्टबॉक्स मेकर (Create Textbox)">
+                        <i class="bi bi-fonts" style="font-size: 14px;"></i>
+                    </button>
+                    <button id="agentCmdExport" class="btn btn-xs btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; padding: 0;" title="एक्सपोर्ट मैनेजर (Export Docs)">
+                        <i class="bi bi-file-earmark-arrow-up-fill" style="font-size: 14px;"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="chatHistory" class="chat-history mb-3">
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <strong>स्वागत है! 👋</strong> मैं आपकी डेटा विश्लेषण में सहायता करने के लिए यहाँ हूँ। आप डेटा के बारे में कोई भी प्रश्न पूछ सकते हैं।
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                </div>
+        </div>
+        <div class="chat-popup-footer">
+            <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                <div class="form-check form-switch m-0 d-flex align-items-center">
+                    <input class="form-check-input me-2" type="checkbox" id="toggleAgentMode" style="cursor: pointer;">
+                    <label class="form-check-label small fw-bold text-primary" for="toggleAgentMode" style="cursor: pointer; user-select: none;">
+                        <i class="bi bi-robot me-1"></i> एजेंट मोड (Agent Mode)
+                    </label>
+                </div>
+                <span class="badge bg-secondary text-white small" id="agentModeBadge">नॉर्मल (Normal)</span>
+            </div>
+            <div class="input-group">
+                <textarea id="chatInput" class="form-control" placeholder="अपना प्रश्न पूछें... " rows="1"></textarea>
+                <button id="sendChatBtn" class="btn btn-primary">
+                    <i class="bi bi-send"></i> भेजें
+                </button>
+            </div>
+            <div class="chat-footer-info">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> चैट मोड में AI आपके अपलोड किए गए डेटा और पिछले संवादों के आधार पर जवाब देगा।
+                </small>
+                <small class="text-muted d-block mt-1">
+                    संदेश: <span id="charCount">0</span>/1000
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Analytics & Diagnostic Report Modal -->
+    <div class="modal fade" id="advancedAnalyticsModal" tabindex="-1" aria-labelledby="advancedAnalyticsModalLabel" aria-hidden="true"></div>
+
+    <div class="modal fade" id="codeEditorModal" tabindex="-1" aria-labelledby="codeEditorModalLabel" aria-hidden="true"></div>
+
+    <div class="modal fade" id="addDataModal" tabindex="-1" aria-labelledby="addDataModalLabel" aria-hidden="true"></div>
+    
+    <div class="modal fade" id="mainMenuModal" tabindex="-1" aria-labelledby="mainMenuModalLabel" aria-hidden="true"></div>
+    
+
+    <!-- Chart Annotation Modal -->
+    <div class="modal fade" id="chartAnnotationModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;"></div>
+
+    <div class="ai-advice-overlay"></div>
+    <div class="ai-advice-container">
+        <button id="closeAiAdviceBtn">&times;</button>
+        <div id="aiAdviceContent">
+            </div>
+    </div>
+
+    <button id="toggleLockModeBtn" class="btn btn-outline-secondary">
+        <i class="bi bi-lock-fill"></i> Desbord Lock
+    </button>
+    <div id="openChatBtn" class="floating-chat-button">
+        <i class="bi bi-chat-dots-fill"></i>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/js/plugin.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/luckysheet.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPDF/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moveable/dist/moveable.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script type="module" src="src/js/main.js"></script>
+    
+    <!-- Pickr CSS + JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+</body>
+</html>

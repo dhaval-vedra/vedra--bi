@@ -1,0 +1,148 @@
+# ══════════════════════════════════════════════════════════════════
+#  Vedra BI — .gitignore
+#  Repository: https://github.com/gametidhaval980/vedra-bi
+# ══════════════════════════════════════════════════════════════════
+
+# ─── Dependencies ────────────────────────────────────────────────
+node_modules/
+.npm/
+.pnp/
+.pnp.js
+
+# ─── Build Output ────────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+out/
+.output/
+
+# ─── Environment & Secrets ───────────────────────────────────────
+# IMPORTANT: Never commit these files — they contain API keys!
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+*.env
+
+# ─── Firebase ────────────────────────────────────────────────────
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+firestore.rules.bak
+functions/.runtimeconfig.json
+
+# ─── Vite ────────────────────────────────────────────────────────
+vite.config.ts.timestamp-*
+vite.config.js.timestamp-*
+
+# ─── Logs ────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Runtime & Cache ─────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+.prettiercache
+
+# ─── OS Files ────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+*~
+
+# ─── IDE & Editor ────────────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# ─── TypeScript ──────────────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ─── Python Backend (Optional) ───────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
+.python-version
+*.egg
+*.egg-info/
+dist/
+pip-wheel-metadata/
+
+# ─── Test & Coverage ─────────────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+test-report/
+
+# ─── Exported / Generated Reports ────────────────────────────────
+# Prevent accidentally committing exported data
+exports/
+reports/
+*.pdf
+*.xlsx
+*.csv
+
+# ─── Large Data Files ────────────────────────────────────────────
+# Sample/test data should go in src/data/ only
+*.json.bak
+data/uploads/
+
+# ─── Temporary Files ─────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ─── Package Manager Locks ───────────────────────────────────────
+# Keep package-lock.json but ignore others if using npm
+yarn.lock
+pnpm-lock.yaml
+
+# ─── Replit (if applicable) ──────────────────────────────────────
+.replit
+replit.nix
+.config/
+
+# ─── Miscellaneous ───────────────────────────────────────────────
+*.local
+*.orig
+CHANGELOG.md.bak
