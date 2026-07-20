@@ -374,7 +374,7 @@ vedra-bi/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/gametidhaval980/vedra-bi.git
+git clone https://github.com/dhaval-vedra/vedra-bi.git
 cd vedra-bi
 ```
 
